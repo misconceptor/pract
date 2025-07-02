@@ -9,8 +9,8 @@ using namespace std;
 // но пропускающих подстроку abca.
 
 int main(){
-    regex r(R"(a(?:(?!bca)..)a)");
-    string s="abca akka aoioia a99a";
+    regex r(R"(a(?:(?!bc)..)a)");
+    string s="sdf abca aabcba";
     auto b = sregex_iterator(s.begin(),s.end(),r);
     auto e = sregex_iterator();
     for(auto i = b; i!=e; ++i){
@@ -18,11 +18,11 @@ int main(){
     }
     cout<<endl;
 
-    smatch m;
-    while(regex_search(s,m,r)){
-        cout<<m.str()<<' ';
-        s=m.suffix().str();
-    }
-    cout<<endl;
+    // smatch m;
+    // while(regex_search(s,m,r)){
+    //     cout<<m.str()<<' ';
+    //     s=m.suffix().str();
+    // }
+    // cout<<endl;
     return 0;
 }
