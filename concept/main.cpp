@@ -1,32 +1,39 @@
 #include <concepts>
 #include <type_traits>
 #include <iostream>      
+#include <string>
+#include <vector>
 using namespace std;
-template<typename T>                                  
-requires integral<T>
-T gcd(T a, T b) {
-    if(b==0) return a;
-    else return gcd(b, a % b);
+template<typename T>
+concept isbool=is_same_v<T,bool>;
+
+template<typename T>
+concept integral_not_bool = std::integral<T> && (!isbool<T>);
+
+template<typename T>
+requires isbool<T>
+void f(T a) {
+    cout << "boolean " << boolalpha << a << endl;
 }
-template<typename T>                                  
-T gcd1(T a, T b) requires integral<T> {
-    if(b==0) return a; 
-    else return gcd1(b, a % b);
+
+template<typename T>
+requires integral_not_bool<T>
+void f(T a) {
+    cout << "integral " << a << endl;
 }
-template<integral T>                                  
-T gcd2(T a, T b) {
-    if( b == 0 ) return a; 
-    else return gcd2(b, a % b);
+
+template<typename T>
+requires std::floating_point<T>
+void f(T a) {
+    cout << "float " << a << endl;
 }
-integral auto gcd3(integral auto a, integral auto b) { 
-    if( b == 0 ) return a; 
-    else return gcd3(b, a % b);
-}
-int main(){
-    cout << '\n';
-    cout << "gcd(100, 10)= "  <<  gcd(100, 10)  << '\n';
-    cout << "gcd1(100, 10)= " <<  gcd1(100, 10)  << '\n';
-    cout << "gcd2(100, 10)= " <<  gcd2(100, 10)  << '\n';
-    cout << "gcd3(100, 10)= " <<  gcd3(100, 10)  << '\n';
+
+int main() {
+    float d = 1.1f;
+    bool b = false;
+    int a = 55;
+    f(d);
+    f(b);
+    f(a);
     return 0;
 }

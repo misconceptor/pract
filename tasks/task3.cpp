@@ -12,7 +12,7 @@ int main(){
     //     cout<<i->str()<<' ';
     // }
     // cout<<endl;
-	string s1="text summer some text average some text temperature +47 ";
+	string s1="text summer some text average some text temperature +547 ";
 	string s2="Massive heatwave has been reached this summer updating maximal year temperature +85 degrees";
 	regex r1(R"([\s\S]*?(summer|spring)\s+[\S\s]*?\s+(max|maximal|average)\s+[\S\s]*\s+temperature\s[+-][0-9]{2}\s+[\S\s]*)");
 

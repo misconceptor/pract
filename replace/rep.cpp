@@ -26,7 +26,8 @@ int main(){
 
     //task5:
     string s5="Hi! My ID is #123_ABC.";
-    regex r5(R"([^a-zA-Z]+)");
+    regex r55(R"([^a-zA-Z]+)");
+    regex r5(R"([\s]+)");
     cout<<regex_replace(s5,r5,"")<<endl;
     
     //task6:
