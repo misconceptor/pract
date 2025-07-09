@@ -6,8 +6,9 @@
 using namespace std;
 
 template<typename T> //task 1a
-requires std::integral<T>
+// requires std::integral<T>
 void print_if_integer(T a){
+    static_assert(integral<T>,"not an integral");
     cout<<a<<endl;
 }
 
@@ -47,17 +48,17 @@ void task4(T a){
     cout<<"Error: not an integral\n";
 }
 
-template <typename T> //task5a
-enable_if_t<is_integral_v<T>, T>
-doubleValue(T value) {
-    return value * 2;
-}
-template <typename T>//task5b
-enable_if_t<!is_integral_v<T>, void>
-doubleValue(T) {
-    // static_assert(std::is_integral_v<T>, "not an integral");
-    cout<<"doubleValue error: not an integral\n";
-}
+// template <typename T> //task5a
+// enable_if_t<is_integral_v<T>, T>
+// doubleValue(T value) {
+//     return value * 2;
+// }
+// template <typename T>//task5b
+// enable_if_t<!is_integral_v<T>, void>
+// doubleValue(T) {
+//     // static_assert(std::is_integral_v<T>, "not an integral");
+//     cout<<"doubleValue error: not an integral\n";
+// }
 
 struct st{};
 template<typename T> //task6
@@ -79,19 +80,24 @@ T sum(T a, T b){
     return a+b;
 }
 
+template<typename T> //task 5
+concept Integral = is_integral_v<T>;
+template<typename T>
+struct X {
+    static T func(T) {
+        cout << "not an integer\n"<< std::endl;
+        return T{};
+    }
+};
+template<Integral T>
+struct X<T> {
+    static T func(T a) {
+        return a*2;
+    }
+};
+
 int main(){
-    float d=5.5;
-    int x=3;
-    string s="q";
-    // print_if_integer(x);
-    // print_if_floating_point(x);
-    //print_if_numeric(x);
-    // cout<<double_if_integral2(s);
-    // doubleValue(x);
-    // int a=100,b=50;
-    // cout<<sum(d,d);
-    st S;
-    // print(S);
-    print(s);
+    cout<<(X<int>::func(5))<<endl; 
+    X<string>::func("ooo"); 
     return 0;
 }

@@ -34,16 +34,15 @@ void task3(){
     cout<<endl;
 }
 void task4(){
-    string s="abab ybabo aa ";
-    regex r(R"((ab)+)");
+    string s="abababababab";
+    regex r(R"((?=(abab)).)");
+    smatch m;
     auto b=sregex_iterator(s.begin(),s.end(),r);
     auto e=sregex_iterator();
-    // string ans="";
     for(auto i=b;i!=e;++i){
-        //ans+=(*i)[0].str();
-        cout<<i->str()<<',';
+        cout<<(*i).position()<<':';
+        cout << (*i)[1].str() << ',';
     }
-    // cout<<ans<<endl;
 }
 void task5(){
     string s="2+++3 23 2-3";
