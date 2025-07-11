@@ -3,7 +3,7 @@
 #include <regex>
 using namespace std;
 
-void Temp(smatch s) {
+void foo(smatch s) {
     int deg = stoi(s.str(8));
     string sign = s.str(7);
     if (sign == "-")
@@ -22,20 +22,20 @@ int main() {
     int i=1;
     while (getline(fin, str)) {
         cout <<i++<<")-----------\n";
-        getline(fin, str);
+        // getline(fin, str);
         cout << "Given string: \"" + str + "\"\n";
         smatch res;
         auto begin = str.cbegin();
         auto end = str.cend();
         if (regex_match(str, res, r)) {
             cout << "fits" << '\n';
-            Temp(res);
+            foo(res);
         } else {
             cout << "doesn't fit" << '\n';
         }
         if (regex_search(str, res, r)) {
             cout << "substring: \"" + res.str() + "\" fits\n";
-            Temp(res);
+            foo(res);
         } else {
             cout << "no matches\n";
         }

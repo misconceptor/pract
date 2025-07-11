@@ -96,8 +96,16 @@ struct X<T> {
     }
 };
 
+template<typename T>
+T function(T a){
+    X<T>::func(a);
+}
+
 int main(){
-    cout<<(X<int>::func(5))<<endl; 
-    X<string>::func("ooo"); 
+    // cout<<(X<int>::func(5))<<endl; 
+    // X<string>::func("ooo"); 
+    int k=1;
+    string s="iuiu";
+    function(k);
     return 0;
 }

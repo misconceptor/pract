@@ -1,12 +1,10 @@
 #include <iostream>
 #include <iterator>
 #include <string>
-#include <format>
 using namespace std;
 int main() {
     string n="AAA";
     int num=44;
-    cout<<format("hello, {}! you have {} messages\n",n,num);
 
 
 

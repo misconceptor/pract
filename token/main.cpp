@@ -20,55 +20,58 @@ int main(){
     }
     string text((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
     cout<<"text=\""<<text<<"\"\n";
-    regex date_regex(R"(\d{2}[./\/-]\d{2}[./\/-]\d{4}\s|\d{4}[./\/-]\d{2}[./\/-]\d{2}\s)");
+    regex date_regex(R"(\b(\d{2}[./\/-]\d{2}[./\/-]\d{4}|\d{4}[./\/-]\d{2}[./\/-]\d{2})\b)");
     auto b=sregex_iterator(text.begin(), text.end(), date_regex);
     auto e=sregex_iterator();
-    int date_pos=b->position();
-    // cout<<"pos="<<date_pos<<endl;
+    int date_pos=b->position(0);
+    for(int i=0;i<date_pos;++i){
+        if(text[i] != ' ' && text[i] != '\t' && text[i] != '\n' && text[i] != '\r'){
+            cout<<"Error: numbers before the date!\n";
+            return 1;
+        }
+    }
     int num=0;
     for(auto it=b;it!=e;++it,++num){}
     if(num!=1){
         cout<<"Error: number of dates = "<<num<<endl;
         return 1;
     }
-    if(date_pos!=0){
-        cout<<"Error: position is not in the beginning\n";
-        return 1;
-    }
     auto q=sregex_iterator(text.begin(), text.end(), date_regex);
     cout<<"Date: "<<q->str()<<endl;
-    text =regex_replace(text,date_regex,"");
-    // cout<<"without date: "<<text<<endl;
-    regex intreg(R"([^\.\/e][+-]?\d+[^\.\/e])");
-    auto bi=sregex_iterator(text.begin(), text.end(), intreg);
-    auto ei=sregex_iterator();
-    int int_sum=0;
-    cout<<"Integers: ";
-    for(auto it=bi;it!=ei;++it){
-        // cout<<it->str()<<',';
-        int num=stoi((*it).str());
-        cout<<num<<' ';
-        int_sum+=num;
-    }
-    cout<<"\nSum: "<<int_sum<<endl; 
-    text =regex_replace(text,intreg," ");
-    // cout<<"without int:"<<text<<endl;
-    regex doublereg(R"([+-]?\d+[\.\/eE]\d+)");
+    text =regex_replace(text,date_regex," ");
+
+    regex doublereg(R"(([-+]?\d+/\d+)|([-+]?(\d+(\.\d*)?|\.\d+)[eE][+-]?\d+)|([-+]?\d*\.\d+))");
     auto bd=sregex_iterator(text.begin(), text.end(), doublereg);
     auto ed=sregex_iterator();
     double double_sum=0.0;
-    cout<<"Doubles: ";
+    cout<<"Non-integers: ";
     for(auto it=bd;it!=ed;++it){
         string token=it->str();
         if(token.find('/')!=token.npos){
             cout<<token<<' ';
             double_sum+=fractionToDouble(token);
         } else {
-            double num=stod((*it).str());
+            double num=(double)stod((*it).str());
             cout<<num<<' ';
             double_sum+=num;
         }
     }
+    
+    text = regex_replace(text, doublereg, " ");
     cout<<"\nSum: "<<double_sum<<endl;
+
+    regex intreg(R"(\b[+-]?\d+\b)");
+
+    auto bi=sregex_iterator(text.begin(), text.end(), intreg);
+    auto ei=sregex_iterator();
+    int int_sum=0;
+    cout<<"Integers: ";
+    for(auto it=bi;it!=ei;++it){
+        int num=stoi((*it).str());
+        cout<<num<<' ';
+        int_sum+=num;
+    }
+    cout<<"\nSum: "<<int_sum<<endl; 
+    text =regex_replace(text,intreg," ");
     return 0;
 }
