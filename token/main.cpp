@@ -25,8 +25,9 @@ int main(){
     auto e=sregex_iterator();
     int date_pos=b->position(0);
     for(int i=0;i<date_pos;++i){
-        if(text[i] != ' ' && text[i] != '\t' && text[i] != '\n' && text[i] != '\r'){
-            cout<<"Error: numbers before the date!\n";
+        // if(text[i] != ' ' && text[i] != '\t' && text[i] != '\n' && text[i] != '\r'){
+        if(text[i]>='0' && text[i] <= '9'){
+            cout<<"Error: something before the date!\n";
             return 1;
         }
     }
