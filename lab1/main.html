@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Color Models: RGB · CMYK · HSV</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f6f8fc;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .app {
+            max-width: 920px;
+            width: 100%;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 20px 60px rgba(0, 20, 40, 0.12);
+            padding: 32px 36px 40px;
+        }
+
+        h1 {
+            font-weight: 600;
+            font-size: 26px;
+            letter-spacing: -0.3px;
+            color: #0b1a2f;
+            margin-bottom: 24px;
+        }
+
+        h1 small {
+            font-weight: 400;
+            font-size: 16px;
+            color: #5b6f87;
+            margin-left: 8px;
+        }
+
+        .color-preview {
+            width: 100%;
+            height: 80px;
+            border-radius: 18px;
+            background: #ff4d4d;
+            margin-bottom: 28px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.04);
+            transition: background 0.05s;
+        }
+
+        .picker-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 28px;
+            margin-bottom: 28px;
+        }
+
+        @media (max-width: 680px) {
+            .picker-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            .app {
+                padding: 20px 18px 28px;
+            }
+        }
+
+        .hsv-palette-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background: #eef2f7;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+            cursor: crosshair;
+            user-select: none;
+            touch-action: none;
+        }
+
+        #hsvCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: red;
+        }
+
+        .slider-section {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .model-group {
+            background: #f8faff;
+            border-radius: 18px;
+            padding: 16px 18px 18px;
+            border: 1px solid #e9edf4;
+        }
+
+        .model-group:hover {
+            border-color: #cdd7e6;
+        }
+
+        .model-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-weight: 600;
+            font-size: 15px;
+            color: #1d2b41;
+            margin-bottom: 12px;
+            letter-spacing: 0.2px;
+        }
+
+        .model-header .badge {
+            font-weight: 400;
+            font-size: 13px;
+            color: #5f748e;
+            background: #eef2f9;
+            padding: 2px 12px;
+            border-radius: 30px;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .slider-row label {
+            width: 20px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #25364d;
+            text-transform: uppercase;
+        }
+
+        .slider-row input[type="range"] {
+            flex: 1;
+            height: 5px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #d7dfea;
+            border-radius: 10px;
+            outline: none;
+            transition: background 0.1s;
+        }
+
+        .slider-row input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #1f2e47;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+        }
+
+        .slider-row input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.12);
+        }
+
+        .slider-row input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #1f2e47;
+            border: 2px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+        }
+
+        .slider-row .value-input {
+            width: 58px;
+            padding: 4px 4px 4px 8px;
+            border: 1px solid #d0d9e8;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            background: white;
+            text-align: center;
+            color: #142433;
+            transition: 0.15s;
+        }
+
+        .slider-row .value-input:focus {
+            border-color: #2d4b8a;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(45, 75, 138, 0.15);
+        }
+
+        .hex-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: #f2f6fe;
+            border-radius: 16px;
+            padding: 12px 18px;
+            margin-top: 6px;
+            border: 1px solid #e2eaf5;
+        }
+
+        .hex-row span {
+            font-weight: 500;
+            color: #1f3049;
+        }
+
+        .hex-row .hex-value {
+            font-family: 'Fira Mono', 'JetBrains Mono', monospace;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            color: #0b1a2f;
+            background: white;
+            padding: 2px 16px;
+            border-radius: 40px;
+            border: 1px solid #d5dfed;
+        }
+
+        .hex-row .copy-btn {
+            margin-left: auto;
+            background: #e2eaf5;
+            border: none;
+            border-radius: 40px;
+            padding: 6px 18px;
+            font-weight: 500;
+            font-size: 13px;
+            color: #1a2d47;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        .hex-row .copy-btn:hover {
+            background: #cbd7e9;
+        }
+
+        .friendly-label {
+            position: fixed;
+            left: 16px;
+            bottom: 16px;
+            font-size: 13px;
+            color: #5b6f87;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            pointer-events: none;
+        }
+
+        @media (max-width: 480px) {
+            .slider-row .value-input {
+                width: 48px;
+                font-size: 13px;
+            }
+            .model-group {
+                padding: 12px 12px 14px;
+            }
+            .hex-row {
+                flex-wrap: wrap;
+            }
+            .hex-row .copy-btn {
+                margin-left: 0;
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="friendly-label">дружелюбный и удобный интерфейс</div>
+
+    <div class="app">
+        <h1>
+            Color Models
+            <small>RGB · CMYK · HSV</small>
+        </h1>
+
+        <div class="color-preview" id="preview" style="background: #ff4d4d;"></div>
+
+        <div class="picker-grid">
+
+            <div class="hsv-palette-wrapper" id="paletteWrapper">
+                <canvas id="hsvCanvas" width="400" height="400"></canvas>
+            </div>
+
+            <div class="slider-section">
+
+                <div class="model-group">
+                    <div class="model-header">
+                        <span>RGB</span>
+                        <span class="badge">0–255</span>
+                    </div>
+                    <div class="slider-row">
+                        <label>R</label>
+                        <input type="range" id="rSlider" min="0" max="255" value="255" />
+                        <input type="number" class="value-input" id="rInput" value="255" min="0" max="255" />
+                    </div>
+                    <div class="slider-row">
+                        <label>G</label>
+                        <input type="range" id="gSlider" min="0" max="255" value="77" />
+                        <input type="number" class="value-input" id="gInput" value="77" min="0" max="255" />
+                    </div>
+                    <div class="slider-row">
+                        <label>B</label>
+                        <input type="range" id="bSlider" min="0" max="255" value="77" />
+                        <input type="number" class="value-input" id="bInput" value="77" min="0" max="255" />
+                    </div>
+                </div>
+
+                <div class="model-group">
+                    <div class="model-header">
+                        <span>CMYK</span>
+                        <span class="badge">0–100%</span>
+                    </div>
+                    <div class="slider-row">
+                        <label>C</label>
+                        <input type="range" id="cSlider" min="0" max="100" value="0" />
+                        <input type="number" class="value-input" id="cInput" value="0" min="0" max="100" />
+                    </div>
+                    <div class="slider-row">
+                        <label>M</label>
+                        <input type="range" id="mSlider" min="0" max="100" value="70" />
+                        <input type="number" class="value-input" id="mInput" value="70" min="0" max="100" />
+                    </div>
+                    <div class="slider-row">
+                        <label>Y</label>
+                        <input type="range" id="ySlider" min="0" max="100" value="70" />
+                        <input type="number" class="value-input" id="yInput" value="70" min="0" max="100" />
+                    </div>
+                    <div class="slider-row">
+                        <label>K</label>
+                        <input type="range" id="kSlider" min="0" max="100" value="0" />
+                        <input type="number" class="value-input" id="kInput" value="0" min="0" max="100" />
+                    </div>
+                </div>
+
+                <div class="model-group">
+                    <div class="model-header">
+                        <span>HSV</span>
+                        <span class="badge">H 0–360 · S/V 0–100</span>
+                    </div>
+                    <div class="slider-row">
+                        <label>H</label>
+                        <input type="range" id="hSlider" min="0" max="360" value="0" />
+                        <input type="number" class="value-input" id="hInput" value="0" min="0" max="360" />
+                    </div>
+                    <div class="slider-row">
+                        <label>S</label>
+                        <input type="range" id="sSlider" min="0" max="100" value="70" />
+                        <input type="number" class="value-input" id="sInput" value="70" min="0" max="100" />
+                    </div>
+                    <div class="slider-row">
+                        <label>V</label>
+                        <input type="range" id="vSlider" min="0" max="100" value="100" />
+                        <input type="number" class="value-input" id="vInput" value="100" min="0" max="100" />
+                    </div>
+                </div>
+
+                <div class="hex-row">
+                    <span>HEX</span>
+                    <span class="hex-value" id="hexDisplay">#FF4D4D</span>
+                    <button class="copy-btn" id="copyHex">Copy</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            var preview = document.getElementById('preview');
+            var rSlider = document.getElementById('rSlider');
+            var gSlider = document.getElementById('gSlider');
+            var bSlider = document.getElementById('bSlider');
+            var rInput = document.getElementById('rInput');
+            var gInput = document.getElementById('gInput');
+            var bInput = document.getElementById('bInput');
+
+            var cSlider = document.getElementById('cSlider');
+            var mSlider = document.getElementById('mSlider');
+            var ySlider = document.getElementById('ySlider');
+            var kSlider = document.getElementById('kSlider');
+            var cInput = document.getElementById('cInput');
+            var mInput = document.getElementById('mInput');
+            var yInput = document.getElementById('yInput');
+            var kInput = document.getElementById('kInput');
+
+            var hSlider = document.getElementById('hSlider');
+            var sSlider = document.getElementById('sSlider');
+            var vSlider = document.getElementById('vSlider');
+            var hInput = document.getElementById('hInput');
+            var sInput = document.getElementById('sInput');
+            var vInput = document.getElementById('vInput');
+
+            var hexDisplay = document.getElementById('hexDisplay');
+            var copyBtn = document.getElementById('copyHex');
+
+            var canvas = document.getElementById('hsvCanvas');
+            var ctx = canvas.getContext('2d');
+            var wrapper = document.getElementById('paletteWrapper');
+
+            var updating = false;
+
+            function rgbToCmyk(r, g, b) {
+                var rp = r / 255,
+                    gp = g / 255,
+                    bp = b / 255;
+                var k = 1 - Math.max(rp, gp, bp);
+                var c = (1 - rp - k) / (1 - k) || 0;
+                var m = (1 - gp - k) / (1 - k) || 0;
+                var y = (1 - bp - k) / (1 - k) || 0;
+                return [Math.round(c * 100), Math.round(m * 100), Math.round(y * 100), Math.round(k * 100)];
+            }
+
+            function cmykToRgb(c, m, y, k) {
+                var c1 = c / 100,
+                    m1 = m / 100,
+                    y1 = y / 100,
+                    k1 = k / 100;
+                var r = 255 * (1 - c1) * (1 - k1);
+                var g = 255 * (1 - m1) * (1 - k1);
+                var b = 255 * (1 - y1) * (1 - k1);
+                return [Math.round(r), Math.round(g), Math.round(b)];
+            }
+
+            function rgbToHsv(r, g, b) {
+                var rp = r / 255,
+                    gp = g / 255,
+                    bp = b / 255;
+                var max = Math.max(rp, gp, bp),
+                    min = Math.min(rp, gp, bp);
+                var v = max;
+                var d = max - min;
+                var s = max === 0 ? 0 : d / max;
+                var h = 0;
+                if (max !== min) {
+                    if (max === rp) h = (gp - bp) / d + (gp < bp ? 6 : 0);
+                    else if (max === gp) h = (bp - rp) / d + 2;
+                    else if (max === bp) h = (rp - gp) / d + 4;
+                    h = h * 60;
+                }
+                return [Math.round(h), Math.round(s * 100), Math.round(v * 100)];
+            }
+
+            function hsvToRgb(h, s, v) {
+                var s1 = s / 100,
+                    v1 = v / 100;
+                var c = v1 * s1;
+                var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+                var m = v1 - c;
+                var rp, gp, bp;
+                if (h >= 0 && h < 60) { rp = c;
+                    gp = x;
+                    bp = 0; } else if (h >= 60 && h < 120) { rp = x;
+                    gp = c;
+                    bp = 0; } else if (h >= 120 && h < 180) { rp = 0;
+                    gp = c;
+                    bp = x; } else if (h >= 180 && h < 240) { rp = 0;
+                    gp = x;
+                    bp = c; } else if (h >= 240 && h < 300) { rp = x;
+                    gp = 0;
+                    bp = c; } else { rp = c;
+                    gp = 0;
+                    bp = x; }
+                var r = (rp + m) * 255;
+                var g = (gp + m) * 255;
+                var b = (bp + m) * 255;
+                return [Math.round(r), Math.round(g), Math.round(b)];
+            }
+
+            function rgbToHex(r, g, b) {
+                return ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+            }
+
+            function drawHsvPalette(hue) {
+                var w = canvas.width;
+                var h = canvas.height;
+                var imageData = ctx.createImageData(w, h);
+                var data = imageData.data;
+                var idx = 0;
+                for (var y = 0; y < h; y++) {
+                    var v = 100 - (y / h) * 100;
+                    for (var x = 0; x < w; x++) {
+                        var s = (x / w) * 100;
+                        var rgb = hsvToRgb(hue, s, v);
+                        data[idx++] = rgb[0];
+                        data[idx++] = rgb[1];
+                        data[idx++] = rgb[2];
+                        data[idx++] = 255;
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+
+                var sVal = Number(sSlider.value);
+                var vVal = Number(vSlider.value);
+                var mx = (sVal / 100) * w;
+                var my = (1 - vVal / 100) * h;
+
+                ctx.beginPath();
+                ctx.arc(mx, my, 8, 0, 2 * Math.PI);
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(mx, my, 8, 0, 2 * Math.PI);
+                ctx.strokeStyle = '#1a2a44';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(mx, my, 3, 0, 2 * Math.PI);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+            }
+
+            function updateFromRGB(r, g, b) {
+                if (updating) return;
+                updating = true;
+
+                r = Math.min(255, Math.max(0, Math.round(r)));
+                g = Math.min(255, Math.max(0, Math.round(g)));
+                b = Math.min(255, Math.max(0, Math.round(b)));
+
+                rSlider.value = r;
+                gSlider.value = g;
+                bSlider.value = b;
+                rInput.value = r;
+                gInput.value = g;
+                bInput.value = b;
+
+                var cmyk = rgbToCmyk(r, g, b);
+                var c = cmyk[0],
+                    m = cmyk[1],
+                    y = cmyk[2],
+                    k = cmyk[3];
+                cSlider.value = c;
+                mSlider.value = m;
+                ySlider.value = y;
+                kSlider.value = k;
+                cInput.value = c;
+                mInput.value = m;
+                yInput.value = y;
+                kInput.value = k;
+
+                var hsv = rgbToHsv(r, g, b);
+                var h = hsv[0],
+                    s = hsv[1],
+                    v = hsv[2];
+                hSlider.value = h;
+                sSlider.value = s;
+                vSlider.value = v;
+                hInput.value = h;
+                sInput.value = s;
+                vInput.value = v;
+
+                hexDisplay.textContent = '#' + rgbToHex(r, g, b);
+                preview.style.backgroundColor = 'rgb(' + r + ', ' + g + ', ' + b + ')';
+                drawHsvPalette(h);
+
+                updating = false;
+            }
+
+            function updateFromCMYK(c, m, y, k) {
+                if (updating) return;
+                c = Math.min(100, Math.max(0, Number(c) || 0));
+                m = Math.min(100, Math.max(0, Number(m) || 0));
+                y = Math.min(100, Math.max(0, Number(y) || 0));
+                k = Math.min(100, Math.max(0, Number(k) || 0));
+                var rgb = cmykToRgb(c, m, y, k);
+                updateFromRGB(rgb[0], rgb[1], rgb[2]);
+            }
+
+            function updateFromHSV(h, s, v) {
+                if (updating) return;
+                h = Math.min(360, Math.max(0, Number(h) || 0));
+                s = Math.min(100, Math.max(0, Number(s) || 0));
+                v = Math.min(100, Math.max(0, Number(v) || 0));
+                var rgb = hsvToRgb(h, s, v);
+                updateFromRGB(rgb[0], rgb[1], rgb[2]);
+            }
+
+            function bindSliderAndInput(slider, input, callback) {
+                slider.addEventListener('input', function() {
+                    var val = Number(slider.value);
+                    input.value = val;
+                    callback(val);
+                });
+                input.addEventListener('input', function() {
+                    var val = Number(input.value);
+                    if (isNaN(val)) return;
+                    var min = Number(input.min);
+                    var max = Number(input.max);
+                    if (val < min) val = min;
+                    if (val > max) val = max;
+                    slider.value = val;
+                    input.value = val;
+                    callback(val);
+                });
+                input.addEventListener('blur', function() {
+                    var val = Number(input.value);
+                    if (isNaN(val)) {
+                        val = Number(slider.value);
+                        input.value = val;
+                        return;
+                    }
+                    var min = Number(input.min);
+                    var max = Number(input.max);
+                    if (val < min) val = min;
+                    if (val > max) val = max;
+                    slider.value = val;
+                    input.value = val;
+                    callback(val);
+                });
+            }
+
+            bindSliderAndInput(rSlider, rInput, function(val) {
+                var r = Math.round(val);
+                var g = Math.round(Number(gSlider.value));
+                var b = Math.round(Number(bSlider.value));
+                updateFromRGB(r, g, b);
+            });
+            bindSliderAndInput(gSlider, gInput, function(val) {
+                var r = Math.round(Number(rSlider.value));
+                var g = Math.round(val);
+                var b = Math.round(Number(bSlider.value));
+                updateFromRGB(r, g, b);
+            });
+            bindSliderAndInput(bSlider, bInput, function(val) {
+                var r = Math.round(Number(rSlider.value));
+                var g = Math.round(Number(gSlider.value));
+                var b = Math.round(val);
+                updateFromRGB(r, g, b);
+            });
+
+            bindSliderAndInput(cSlider, cInput, function(val) {
+                var c = Number(val);
+                var m = Number(mSlider.value);
+                var y = Number(ySlider.value);
+                var k = Number(kSlider.value);
+                updateFromCMYK(c, m, y, k);
+            });
+            bindSliderAndInput(mSlider, mInput, function(val) {
+                var c = Number(cSlider.value);
+                var m = Number(val);
+                var y = Number(ySlider.value);
+                var k = Number(kSlider.value);
+                updateFromCMYK(c, m, y, k);
+            });
+            bindSliderAndInput(ySlider, yInput, function(val) {
+                var c = Number(cSlider.value);
+                var m = Number(mSlider.value);
+                var y = Number(val);
+                var k = Number(kSlider.value);
+                updateFromCMYK(c, m, y, k);
+            });
+            bindSliderAndInput(kSlider, kInput, function(val) {
+                var c = Number(cSlider.value);
+                var m = Number(mSlider.value);
+                var y = Number(ySlider.value);
+                var k = Number(val);
+                updateFromCMYK(c, m, y, k);
+            });
+
+            bindSliderAndInput(hSlider, hInput, function(val) {
+                var h = Number(val);
+                var s = Number(sSlider.value);
+                var v = Number(vSlider.value);
+                updateFromHSV(h, s, v);
+            });
+            bindSliderAndInput(sSlider, sInput, function(val) {
+                var h = Number(hSlider.value);
+                var s = Number(val);
+                var v = Number(vSlider.value);
+                updateFromHSV(h, s, v);
+            });
+            bindSliderAndInput(vSlider, vInput, function(val) {
+                var h = Number(hSlider.value);
+                var s = Number(sSlider.value);
+                var v = Number(val);
+                updateFromHSV(h, s, v);
+            });
+
+            function getCanvasCoords(e) {
+                var rect = canvas.getBoundingClientRect();
+                var scaleX = canvas.width / rect.width;
+                var scaleY = canvas.height / rect.height;
+                var clientX, clientY;
+                if (e.touches) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                    e.preventDefault();
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                var x = (clientX - rect.left) * scaleX;
+                var y = (clientY - rect.top) * scaleY;
+                return {
+                    x: Math.min(canvas.width, Math.max(0, x)),
+                    y: Math.min(canvas.height, Math.max(0, y))
+                };
+            }
+
+            function handlePalettePick(e) {
+                var coords = getCanvasCoords(e);
+                var s = (coords.x / canvas.width) * 100;
+                var v = 100 - (coords.y / canvas.height) * 100;
+                var h = Number(hSlider.value) || 0;
+                updateFromHSV(h, s, v);
+            }
+
+            wrapper.addEventListener('mousedown', function(e) {
+                handlePalettePick(e);
+                var move = function(ev) { handlePalettePick(ev); };
+                var up = function() {
+                    document.removeEventListener('mousemove', move);
+                    document.removeEventListener('mouseup', up);
+                };
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', up);
+            });
+
+            wrapper.addEventListener('touchstart', function(e) {
+                handlePalettePick(e);
+                var move = function(ev) {
+                    ev.preventDefault();
+                    handlePalettePick(ev);
+                };
+                var end = function() {
+                    document.removeEventListener('touchmove', move);
+                    document.removeEventListener('touchend', end);
+                };
+                document.addEventListener('touchmove', move, { passive: false });
+                document.addEventListener('touchend', end);
+            }, { passive: false });
+
+            copyBtn.addEventListener('click', function() {
+                var hex = hexDisplay.textContent;
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(hex).then(function() {
+                        copyBtn.textContent = 'Copied!';
+                        setTimeout(function() { copyBtn.textContent = 'Copy'; }, 1500);
+                    }).catch(function() { fallbackCopy(hex); });
+                } else {
+                    fallbackCopy(hex);
+                }
+            });
+
+            function fallbackCopy(text) {
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(function() { copyBtn.textContent = 'Copy'; }, 1500);
+                } catch (e) {
+                    alert('Failed to copy: ' + text);
+                }
+                document.body.removeChild(ta);
+            }
+
+            updateFromRGB(255, 77, 77);
+
+        })();
+    </script>
+
+</body>
+</html>
