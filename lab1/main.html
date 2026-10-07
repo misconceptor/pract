@@ -562,6 +562,14 @@
                 var h = hsv[0],
                     s = hsv[1],
                     v = hsv[2];
+
+                if (s === 0 || v === 0) {
+                    h = Number(hSlider.value) || 0;
+                }
+                if (v === 0) {
+                    s = Number(sSlider.value) || 0;
+                }
+
                 hSlider.value = h;
                 sSlider.value = s;
                 vSlider.value = v;
