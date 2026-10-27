@@ -3,5 +3,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .streamlit/secrets.toml
-scratch_test.py
 .DS_Store
+stretch_contrast.py
+stretch_hist_eq.py
