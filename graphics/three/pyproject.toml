@@ -1,0 +1,15 @@
+# Pytest configuration.
+#
+# `pytest` from the project root will:
+#   1. collect explicit tests from tests/*.py;
+#   2. collect doctests from every .py file under algorithms/.
+#
+# Run:
+#   pytest                 # everything
+#   pytest -q              # quieter
+#   pytest --cov=algorithms # with coverage (needs pytest-cov)
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "algorithms"]
+addopts = "--doctest-modules -v"
+pythonpath = ["."]
