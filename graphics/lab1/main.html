@@ -529,7 +529,7 @@
                 ctx.fill();
             }
 
-            function updateFromRGB(r, g, b) {
+            function updateFromRGB(r, g, b, source) {
                 if (updating) return;
                 updating = true;
 
@@ -544,42 +544,42 @@
                 gInput.value = g;
                 bInput.value = b;
 
-                var cmyk = rgbToCmyk(r, g, b);
-                var c = cmyk[0],
-                    m = cmyk[1],
-                    y = cmyk[2],
-                    k = cmyk[3];
-                cSlider.value = c;
-                mSlider.value = m;
-                ySlider.value = y;
-                kSlider.value = k;
-                cInput.value = c;
-                mInput.value = m;
-                yInput.value = y;
-                kInput.value = k;
-
-                var hsv = rgbToHsv(r, g, b);
-                var h = hsv[0],
-                    s = hsv[1],
-                    v = hsv[2];
-
-                if (s === 0 || v === 0) {
-                    h = Number(hSlider.value) || 0;
-                }
-                if (v === 0) {
-                    s = Number(sSlider.value) || 0;
+                if (source !== 'cmyk') {
+                    var cmyk = rgbToCmyk(r, g, b);
+                    cSlider.value = cmyk[0];
+                    mSlider.value = cmyk[1];
+                    ySlider.value = cmyk[2];
+                    kSlider.value = cmyk[3];
+                    cInput.value = cmyk[0];
+                    mInput.value = cmyk[1];
+                    yInput.value = cmyk[2];
+                    kInput.value = cmyk[3];
                 }
 
-                hSlider.value = h;
-                sSlider.value = s;
-                vSlider.value = v;
-                hInput.value = h;
-                sInput.value = s;
-                vInput.value = v;
+                if (source !== 'hsv') {
+                    var hsv = rgbToHsv(r, g, b);
+                    var h = hsv[0],
+                        s = hsv[1],
+                        v = hsv[2];
+
+                    if (s === 0 || v === 0) {
+                        h = Number(hSlider.value) || 0;
+                    }
+                    if (v === 0) {
+                        s = Number(sSlider.value) || 0;
+                    }
+
+                    hSlider.value = h;
+                    sSlider.value = s;
+                    vSlider.value = v;
+                    hInput.value = h;
+                    sInput.value = s;
+                    vInput.value = v;
+                    drawHsvPalette(h);
+                }
 
                 hexDisplay.textContent = '#' + rgbToHex(r, g, b);
                 preview.style.backgroundColor = 'rgb(' + r + ', ' + g + ', ' + b + ')';
-                drawHsvPalette(h);
 
                 updating = false;
             }
@@ -591,7 +591,7 @@
                 y = Math.min(100, Math.max(0, Number(y) || 0));
                 k = Math.min(100, Math.max(0, Number(k) || 0));
                 var rgb = cmykToRgb(c, m, y, k);
-                updateFromRGB(rgb[0], rgb[1], rgb[2]);
+                updateFromRGB(rgb[0], rgb[1], rgb[2], 'cmyk');
             }
 
             function updateFromHSV(h, s, v) {
@@ -600,7 +600,7 @@
                 s = Math.min(100, Math.max(0, Number(s) || 0));
                 v = Math.min(100, Math.max(0, Number(v) || 0));
                 var rgb = hsvToRgb(h, s, v);
-                updateFromRGB(rgb[0], rgb[1], rgb[2]);
+                updateFromRGB(rgb[0], rgb[1], rgb[2], 'hsv');
             }
 
             function bindSliderAndInput(slider, input, callback) {
@@ -641,19 +641,19 @@
                 var r = Math.round(val);
                 var g = Math.round(Number(gSlider.value));
                 var b = Math.round(Number(bSlider.value));
-                updateFromRGB(r, g, b);
+                updateFromRGB(r, g, b, 'rgb');
             });
             bindSliderAndInput(gSlider, gInput, function(val) {
                 var r = Math.round(Number(rSlider.value));
                 var g = Math.round(val);
                 var b = Math.round(Number(bSlider.value));
-                updateFromRGB(r, g, b);
+                updateFromRGB(r, g, b, 'rgb');
             });
             bindSliderAndInput(bSlider, bInput, function(val) {
                 var r = Math.round(Number(rSlider.value));
                 var g = Math.round(Number(gSlider.value));
                 var b = Math.round(val);
-                updateFromRGB(r, g, b);
+                updateFromRGB(r, g, b, 'rgb');
             });
 
             bindSliderAndInput(cSlider, cInput, function(val) {
@@ -787,7 +787,7 @@
                 document.body.removeChild(ta);
             }
 
-            updateFromRGB(255, 77, 77);
+            updateFromRGB(255, 77, 77, 'rgb');
 
         })();
     </script>

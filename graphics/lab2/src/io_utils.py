@@ -53,9 +53,9 @@ def _read_bytes(source: ImageSource) -> np.ndarray:
         data = Path(source).read_bytes()
     elif isinstance(source, bytes):
         data = source
-    elif hasattr(source, "getvalue"):           # Streamlit UploadedFile
+    elif hasattr(source, "getvalue"):          
         data = source.getvalue()
-    elif hasattr(source, "read"):               # generic file-like
+    elif hasattr(source, "read"):              
         data = source.read()
     else:
         raise TypeError(f"Unsupported image source: {type(source)!r}")
@@ -79,7 +79,7 @@ def load_image(source: ImageSource) -> np.ndarray:
     if img.ndim == 2:
         return img.astype(np.uint8, copy=False)
 
-    if img.shape[2] == 4:                       # BGRA -> composite onto white
+    if img.shape[2] == 4:                      
         alpha = img[:, :, 3:4].astype(np.float32) / 255.0
         bgr = img[:, :, :3].astype(np.float32)
         img = (bgr * alpha + 255.0 * (1.0 - alpha)).astype(np.uint8)

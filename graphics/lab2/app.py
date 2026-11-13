@@ -1,11 +1,3 @@
-"""
-Nonlinear order-statistic filters + linear contrast stretching + histogram
-equalization (with RGB-per-channel vs HSV-V-only comparison).
-
-Run with:
-    streamlit run app.py
-"""
-
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -13,7 +5,7 @@ import numpy as np
 import streamlit as st
 
 from src.noise import add_gaussian, add_salt_pepper
-from src.contrast import linear_contrast_stretch
+from src.contrast import linear_contrast_stretch_rgb
 from src.histogram_eq import (
     equalize_gray,
     equalize_hsv_v_only,
@@ -43,7 +35,6 @@ IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
 
 @st.cache_data
 def list_order_pairs() -> dict[str, list[tuple[str, str]]]:
-    """Return {category: [(clean_path, noisy_path), ...]} for order_stats."""
     result: dict[str, list[tuple[str, str]]] = {}
     if not ORDER_DIR.exists():
         return result
@@ -61,7 +52,6 @@ def list_order_pairs() -> dict[str, list[tuple[str, str]]]:
             result[sub.name] = pairs
     return result
 
-
 @st.cache_data
 def list_images(folder: Path) -> list[str]:
     if not folder.exists():
@@ -70,7 +60,6 @@ def list_images(folder: Path) -> list[str]:
         str(p) for p in sorted(folder.iterdir())
         if p.is_file() and p.suffix.lower() in IMAGE_EXTS
     ]
-
 
 @st.cache_data
 def cached_load(path: str) -> np.ndarray:
@@ -83,7 +72,6 @@ def _gray_hist(ax, img: np.ndarray, title: str):
     ax.set_xlim(0, 255)
     ax.set_yticks([])
 
-
 def _rgb_hist(ax, img: np.ndarray, title: str):
     if img.ndim == 2:
         return _gray_hist(ax, img, title)
@@ -91,12 +79,12 @@ def _rgb_hist(ax, img: np.ndarray, title: str):
         ax.hist(
             img[..., ch].ravel(), bins=256, range=(0, 256),
             color=color, alpha=0.4, label=label,
+            log=True, 
         )
     ax.set_title(title, fontsize=10)
     ax.set_xlim(0, 255)
     ax.set_yticks([])
     ax.legend(loc="upper right", fontsize=8)
-
 
 def histogram_row(items: list[tuple[str, np.ndarray]], rgb: bool = False):
     fig, axes = plt.subplots(1, len(items), figsize=(4.5 * len(items), 2.4))
@@ -107,7 +95,6 @@ def histogram_row(items: list[tuple[str, np.ndarray]], rgb: bool = False):
     plt.tight_layout()
     st.pyplot(fig)
     plt.close(fig)
-
 
 def show_triplet(images: list[tuple[str, np.ndarray]]):
     cols = st.columns(3)
@@ -133,7 +120,6 @@ tab_ord, tab_contrast, tab_color, tab_about = st.tabs([
     "RGB vs HSV equalization",
     "About",
 ])
-
 
 with tab_ord:
     st.header("Nonlinear filters based on order statistics")
@@ -170,8 +156,7 @@ with tab_ord:
         noisy = cached_load(noisy_path)
         noisy_label = "Noisy (input, real)"
 
-    else:  # synthetic noise
-        # use the clean images from any category as ground truth
+    else:
         pairs = list_order_pairs()
         if not pairs:
             st.error(f"No images found under `{ORDER_DIR}`.")
@@ -208,7 +193,7 @@ with tab_ord:
                     "Sigma (intensity units)", 2, 80, 20, key="ord_g_sigma"
                 )
 
-        rng = np.random.default_rng(0)  # reproducible
+        rng = np.random.default_rng(0)
         if noise_type == "Salt & pepper":
             noisy = add_salt_pepper(clean_gray_only, density=density, rng=rng)
             noisy_label = f"Noisy (S&P {int(density * 100)} %)"
@@ -328,40 +313,44 @@ with tab_contrast:
             high_pct = st.slider("Clip high %", 80, 100, 98, key="contrast_high")
 
         orig = cached_load(path)
-        gray = to_gray(orig)
-        stretched = linear_contrast_stretch(gray, low_pct=low_pct, high_pct=high_pct)
-        equalized = equalize_gray(gray)
+        
+        stretched = linear_contrast_stretch_rgb(orig, low_pct=low_pct, high_pct=high_pct)
+        
+        equalized = equalize_hsv_v_only(orig)
 
         show_triplet([
-            ("Original (grayscale)", gray),
+            ("Original (RGB)", orig),
             (f"Linear stretch (clip {low_pct}–{high_pct}%)", stretched),
-            ("Histogram equalization", equalized),
+            ("Histogram equalization (HSV V-only)", equalized),
         ])
 
-        st.subheader("Metrics")
+        st.subheader("Metrics (computed in grayscale)")
+        gray = to_gray(orig)
+        gray_stretched = to_gray(stretched)
+        gray_equalized = to_gray(equalized)
+
         std1, std2, std3 = st.columns(3)
         std1.metric("Original std-dev", f"{std_dev(gray):.2f}")
-        std2.metric("Stretched std-dev", f"{std_dev(stretched):.2f}")
-        std3.metric("Equalized std-dev", f"{std_dev(equalized):.2f}")
+        std2.metric("Stretched std-dev", f"{std_dev(gray_stretched):.2f}")
+        std3.metric("Equalized std-dev", f"{std_dev(gray_equalized):.2f}")
 
         ent1, ent2, ent3 = st.columns(3)
         ent1.metric("Original entropy", f"{entropy(gray):.3f}")
-        ent2.metric("Stretched entropy", f"{entropy(stretched):.3f}")
-        ent3.metric("Equalized entropy", f"{entropy(equalized):.3f}")
+        ent2.metric("Stretched entropy", f"{entropy(gray_stretched):.3f}")
+        ent3.metric("Equalized entropy", f"{entropy(gray_equalized):.3f}")
 
-        st.subheader("Histograms")
+        st.subheader("Histograms (RGB)")
         histogram_row([
-            ("Original", gray),
+            ("Original", orig),
             ("Linear stretch", stretched),
-            ("Equalized", equalized),
-        ])
+            ("Equalized (HSV)", equalized),
+        ], rgb=True)
 
         st.info(
             "**Stretching** is a straight line — it preserves the shape of the "
             "histogram and only widens it. **Equalization** reshapes the histogram "
             "toward uniform, which can over-amplify noise in flat regions (skies, "
-            "walls). That's why large-sky or portrait images often look worse after "
-            "equalization but fine after percentile-clipped stretching."
+            "walls)."
         )
 
 with tab_color:
@@ -415,7 +404,6 @@ with tab_color:
                 "the RGB equalization will skew it. Include a small side-by-side "
                 "crop in your report — it is a very convincing figure."
             )
-
 
 with tab_about:
     st.header("About this lab — Variant 5")

@@ -31,7 +31,7 @@ def _order_stats_2d(
     img: np.ndarray,
     k: int,
     rank_fn: callable,
-    padding_mode: str = "edge",     #  was "reflect", had a bug
+    padding_mode: str = "edge",     
 ) -> np.ndarray:
 
     """Generic 2D order-statistic filter.

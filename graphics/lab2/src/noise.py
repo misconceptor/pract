@@ -58,9 +58,7 @@ def add_salt_pepper(
     rng = rng or np.random.default_rng()
     h, w = img.shape[:2]
 
-    # Each pixel corrupted independently with probability `density`
     corrupt = rng.random((h, w)) < density
-    # Among corrupted, split into salt and pepper
     salt = corrupt & (rng.random((h, w)) < salt_ratio)
     pepper = corrupt & ~salt
 
