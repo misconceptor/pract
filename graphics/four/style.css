@@ -1,0 +1,596 @@
+/* =========================================================================
+   Lab 4 — 3D Text with Texture
+   Dark theme · indigo accent · responsive sidebar
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   1. Design tokens
+   ------------------------------------------------------------------------- */
+:root {
+  /* Surfaces — deep slate so the 3D viewport stands out */
+  --bg:             #0F1117;
+  --surface:        #171923;
+  --surface-alt:    #1F2230;
+  --surface-hover:  #262A3B;
+  --border:         #2A2F3E;
+  --border-strong:  #3A4055;
+
+  /* Text */
+  --text:           #E5E7EB;
+  --text-muted:     #9CA3AF;
+  --text-faint:     #6B7280;
+
+  /* Accent (brighter than Lab 3, for dark backgrounds) */
+  --accent:         #6366F1;
+  --accent-hover:   #818CF8;
+  --accent-soft:    rgba(99, 102, 241, 0.15);
+  --accent-ring:    rgba(99, 102, 241, 0.35);
+
+  /* Semantic */
+  --danger:         #EF4444;
+
+  /* Layout */
+  --radius:         10px;
+  --radius-sm:      6px;
+  --radius-xs:      4px;
+
+  --gap:            16px;
+  --pad-card:       16px;
+
+  --sidebar-width:  340px;
+  --header-pad-y:   14px;
+
+  /* Typography */
+  --font-sans: "Inter", "Cantarell", "Ubuntu", "Noto Sans", "Segoe UI",
+               "SF Pro Text", "Helvetica Neue", "DejaVu Sans",
+               "Liberation Sans", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Cascadia Mono", "SF Mono",
+               Menlo, Consolas, "Ubuntu Mono", "DejaVu Sans Mono", monospace;
+
+  --fs-xs:         11px;
+  --fs-sm:         12px;
+  --fs-base:       14px;
+  --fs-md:         15px;
+  --fs-lg:         17px;
+  --fs-title:      20px;
+}
+
+/* -------------------------------------------------------------------------
+   2. Reset & base
+   ------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;          /* the sidebar scrolls, the page does not */
+}
+
+h1, h2, h3, p, dl, dt, dd, fieldset, legend {
+  margin: 0;
+  padding: 0;
+}
+
+fieldset {
+  border: 0;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  color: var(--accent-hover);
+}
+
+/* -------------------------------------------------------------------------
+   3. App shell — header + main, main = viewport + sidebar
+   ------------------------------------------------------------------------- */
+#app {
+  height: 100vh;
+  height: 100dvh;            /* mobile-safe when supported */
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+}
+
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: var(--header-pad-y) 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-text h1 {
+  font-size: var(--fs-title);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.subtitle {
+  margin-top: 2px;
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+.subtitle code {
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+
+.app-main {
+  display: grid;
+  grid-template-columns: 1fr var(--sidebar-width);
+  grid-template-rows: 1fr;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* -------------------------------------------------------------------------
+   4. Viewport
+   ------------------------------------------------------------------------- */
+.viewport {
+  position: relative;
+  background:
+    radial-gradient(ellipse at center, #1A1D2A 0%, #0B0D14 100%);
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+
+#scene-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  outline: none;
+  cursor: grab;
+}
+
+#scene-canvas:active {
+  cursor: grabbing;
+}
+
+.viewport-hint {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  padding: 6px 10px;
+  font-size: var(--fs-xs);
+  color: var(--text-faint);
+  background: rgba(15, 17, 23, 0.75);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* -------------------------------------------------------------------------
+   5. Sidebar & cards
+   ------------------------------------------------------------------------- */
+.sidebar {
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  padding: var(--gap);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-height: 0;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 10px;
+}
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+  border: 2px solid var(--bg);
+}
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.card--matrix {
+  /* matrix deserves a little more presence than the other cards */
+  border-color: var(--border-strong);
+}
+
+.card-title {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  padding: 12px var(--pad-card);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-alt);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.muted {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+  color: var(--text-muted);
+  padding: 2px 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  white-space: nowrap;
+}
+
+.card-body {
+  padding: var(--pad-card);
+}
+
+/* -------------------------------------------------------------------------
+   6. Key-value list (Object card)
+   ------------------------------------------------------------------------- */
+.kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 12px;
+  row-gap: 6px;
+  font-size: var(--fs-sm);
+}
+
+.kv dt {
+  color: var(--text-muted);
+}
+
+.kv dd {
+  font-family: var(--font-mono);
+  color: var(--text);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.kv dd code {
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--bg);
+  color: var(--accent-hover);
+}
+
+/* -------------------------------------------------------------------------
+   7. Field groups (Translate / Rotate / Scale)
+   ------------------------------------------------------------------------- */
+.field-group {
+  margin-bottom: 16px;
+}
+
+.field-group:last-of-type {
+  margin-bottom: 12px;
+}
+
+.field-group legend {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 22px 1fr 68px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.field--select {
+  grid-template-columns: 60px 1fr;
+  margin-top: 4px;
+}
+
+.field-label {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+.field--select .field-label {
+  text-align: left;
+  font-family: var(--font-sans);
+}
+
+/* -------------------------------------------------------------------------
+   8. Range sliders
+   ------------------------------------------------------------------------- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Track */
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--surface-alt);
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: var(--surface-alt);
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+
+/* Thumb */
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -6px;          /* center the thumb on the 4px track */
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--accent-ring);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--accent-ring);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+input[type="range"]:hover::-webkit-slider-thumb,
+input[type="range"]:focus::-webkit-slider-thumb {
+  background: var(--accent-hover);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+input[type="range"]:hover::-moz-range-thumb,
+input[type="range"]:focus::-moz-range-thumb {
+  background: var(--accent-hover);
+  box-shadow: 0 0 0 4px var(--accent-ring);
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+/* -------------------------------------------------------------------------
+   9. Number inputs and select
+   ------------------------------------------------------------------------- */
+input[type="number"],
+select {
+  width: 100%;
+  padding: 5px 8px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  -moz-appearance: textfield;
+}
+
+select {
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"]:focus,
+select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+input[type="number"]:hover,
+select:hover {
+  border-color: var(--border-strong);
+}
+
+/* -------------------------------------------------------------------------
+   10. Buttons
+   ------------------------------------------------------------------------- */
+.button-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.button-row:last-child {
+  margin-bottom: 0;
+}
+
+.btn {
+  padding: 8px 12px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--text);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease,
+              color 120ms ease, box-shadow 120ms ease;
+  user-select: none;
+}
+
+.btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.btn:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn--toggle.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
+.btn--toggle.is-on:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+/* -------------------------------------------------------------------------
+   11. Matrix table
+   ------------------------------------------------------------------------- */
+.matrix {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  table-layout: fixed;
+}
+
+.matrix td {
+  padding: 8px 4px;
+  text-align: right;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Tint the translation column — helps the eye find it. */
+.matrix td#m03,
+.matrix td#m13,
+.matrix td#m23 {
+  color: var(--accent-hover);
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+/* Tint the homogeneous bottom row. */
+.matrix tr:last-child td {
+  color: var(--text-faint);
+  background: var(--bg);
+}
+
+/* But m33 stays neutral, it is the "1". */
+.matrix td#m33 {
+  color: var(--text-faint);
+  background: var(--bg);
+}
+
+.matrix-note {
+  margin-top: 10px;
+  font-size: var(--fs-xs);
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+.matrix-note code {
+  color: var(--text-muted);
+  padding: 0 3px;
+  background: var(--bg);
+  border-radius: var(--radius-xs);
+}
+
+/* -------------------------------------------------------------------------
+   12. Responsive — stack the sidebar below the viewport on narrow screens
+   ------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .app-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(45vh, 1fr) auto;
+    overflow-y: auto;
+  }
+
+  .sidebar {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    overflow-y: visible;
+    max-height: none;
+  }
+
+  .viewport {
+    min-height: 45vh;
+  }
+
+  body {
+    overflow: auto;
+  }
+
+  #app {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   13. Reduced-motion friendliness
+   ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

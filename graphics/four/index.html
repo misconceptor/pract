@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lab 4 — 3D Text with Texture</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!--
+    Import map for three.js and its addons (OrbitControls, TextGeometry,
+    FontLoader). Pinning a version keeps the app reproducible; bump the
+    version string in both URLs when upgrading.
+
+    If the app must run fully offline, replace the two URLs below with
+    local paths, e.g.:
+        "three":         "./lib/three.module.js",
+        "three/addons/": "./lib/addons/"
+    and drop a copy of three@0.170.0 into lib/.
+  -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+
+  <!--
+    ES module shims: lets the import map work in browsers that do not
+    yet support import maps natively. Harmless in modern browsers.
+  -->
+  <script async src="https://unpkg.com/es-module-shims@1.10.0/dist/es-module-shims.js"></script>
+</head>
+
+<body>
+  <div id="app">
+
+    <!-- ================================================================
+         Header
+         ================================================================ -->
+    <header class="app-header">
+      <div class="header-text">
+        <h1>3D Text — Raster &amp; Matrix Lab</h1>
+        <p class="subtitle">
+          Lab 4 &middot; string <code id="string-display">Hancharenka</code>
+          &middot; vertex-array mesh &middot; live transformation matrix
+        </p>
+      </div>
+    </header>
+
+    <!-- ================================================================
+         Main area: canvas + sidebar
+         ================================================================ -->
+    <main class="app-main">
+
+      <!-- 3D viewport ------------------------------------------------- -->
+      <section class="viewport" id="viewport">
+        <canvas id="scene-canvas"></canvas>
+
+        <div class="viewport-hint">
+          Drag = orbit &middot; Wheel = zoom &middot; Right-drag = pan
+        </div>
+      </section>
+
+      <!-- Sidebar ----------------------------------------------------- -->
+      <aside class="sidebar" id="sidebar">
+
+        <!-- ---------------- Object card --------------------------- -->
+        <section class="card">
+          <h2 class="card-title">Object</h2>
+          <div class="card-body">
+            <dl class="kv">
+              <dt>String</dt>
+              <dd><code id="string-value">Hancharenka</code></dd>
+              <dt>Vertices</dt>
+              <dd><code id="vertex-count">—</code></dd>
+              <dt>Triangles</dt>
+              <dd><code id="triangle-count">—</code></dd>
+            </dl>
+          </div>
+        </section>
+
+        <!-- ---------------- Transform card ------------------------ -->
+        <section class="card">
+          <h2 class="card-title">Transform</h2>
+          <div class="card-body">
+
+            <!-- Translate -->
+            <fieldset class="field-group">
+              <legend>Translate</legend>
+              <div class="field">
+                <span class="field-label">x</span>
+                <input type="range" id="tx" min="-5" max="5" step="0.01" value="0" aria-label="Translate X slider">
+                <input type="number" id="tx-num" min="-5" max="5" step="0.01" value="0" aria-label="Translate X value">
+              </div>
+              <div class="field">
+                <span class="field-label">y</span>
+                <input type="range" id="ty" min="-5" max="5" step="0.01" value="0" aria-label="Translate Y slider">
+                <input type="number" id="ty-num" min="-5" max="5" step="0.01" value="0" aria-label="Translate Y value">
+              </div>
+              <div class="field">
+                <span class="field-label">z</span>
+                <input type="range" id="tz" min="-5" max="5" step="0.01" value="0" aria-label="Translate Z slider">
+                <input type="number" id="tz-num" min="-5" max="5" step="0.01" value="0" aria-label="Translate Z value">
+              </div>
+            </fieldset>
+
+            <!-- Rotate -->
+            <fieldset class="field-group">
+              <legend>Rotate (degrees)</legend>
+              <div class="field">
+                <span class="field-label">x</span>
+                <input type="range" id="rx" min="-180" max="180" step="1" value="0" aria-label="Rotate X slider">
+                <input type="number" id="rx-num" min="-180" max="180" step="1" value="0" aria-label="Rotate X value">
+              </div>
+              <div class="field">
+                <span class="field-label">y</span>
+                <input type="range" id="ry" min="-180" max="180" step="1" value="0" aria-label="Rotate Y slider">
+                <input type="number" id="ry-num" min="-180" max="180" step="1" value="0" aria-label="Rotate Y value">
+              </div>
+              <div class="field">
+                <span class="field-label">z</span>
+                <input type="range" id="rz" min="-180" max="180" step="1" value="0" aria-label="Rotate Z slider">
+                <input type="number" id="rz-num" min="-180" max="180" step="1" value="0" aria-label="Rotate Z value">
+              </div>
+            </fieldset>
+
+            <!-- Scale -->
+            <fieldset class="field-group">
+              <legend>Scale</legend>
+              <div class="field">
+                <span class="field-label">x</span>
+                <input type="range" id="sx" min="0.1" max="3" step="0.01" value="1" aria-label="Scale X slider">
+                <input type="number" id="sx-num" min="0.1" max="3" step="0.01" value="1" aria-label="Scale X value">
+              </div>
+              <div class="field">
+                <span class="field-label">y</span>
+                <input type="range" id="sy" min="0.1" max="3" step="0.01" value="1" aria-label="Scale Y slider">
+                <input type="number" id="sy-num" min="0.1" max="3" step="0.01" value="1" aria-label="Scale Y value">
+              </div>
+              <div class="field">
+                <span class="field-label">z</span>
+                <input type="range" id="sz" min="0.1" max="3" step="0.01" value="1" aria-label="Scale Z slider">
+                <input type="number" id="sz-num" min="0.1" max="3" step="0.01" value="1" aria-label="Scale Z value">
+              </div>
+            </fieldset>
+
+            <!-- Composition order -->
+            <label class="field field--select">
+              <span class="field-label">Order</span>
+              <select id="order">
+                <option value="TRS" selected>T &middot; R &middot; S</option>
+                <option value="SRT">S &middot; R &middot; T</option>
+                <option value="RTS">R &middot; T &middot; S</option>
+              </select>
+            </label>
+
+          </div>
+        </section>
+
+        <!-- ---------------- Matrix card --------------------------- -->
+        <section class="card card--matrix">
+          <h2 class="card-title">
+            Final matrix <span class="muted" id="matrix-order-label">M = T · R · S</span>
+          </h2>
+          <div class="card-body">
+            <table class="matrix" id="matrix-table" aria-label="Final 4x4 transformation matrix">
+              <tbody>
+                <tr>
+                  <td id="m00">1.000</td><td id="m01">0.000</td><td id="m02">0.000</td><td id="m03">0.000</td>
+                </tr>
+                <tr>
+                  <td id="m10">0.000</td><td id="m11">1.000</td><td id="m12">0.000</td><td id="m13">0.000</td>
+                </tr>
+                <tr>
+                  <td id="m20">0.000</td><td id="m21">0.000</td><td id="m22">1.000</td><td id="m23">0.000</td>
+                </tr>
+                <tr>
+                  <td id="m30">0.000</td><td id="m31">0.000</td><td id="m32">0.000</td><td id="m33">1.000</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="matrix-note">
+              Column-major storage (three.js convention). The right-hand
+              column <code>m03, m13, m23</code> is translation; the
+              bottom-right element is always <code>1</code>.
+            </p>
+          </div>
+        </section>
+
+        <!-- ---------------- Display card -------------------------- -->
+        <section class="card">
+          <h2 class="card-title">Display</h2>
+          <div class="card-body">
+            <div class="button-row">
+              <button type="button" id="btn-wireframe" class="btn btn--toggle">
+                Wireframe
+              </button>
+              <button type="button" id="btn-texture" class="btn btn--toggle is-on">
+                Texture
+              </button>
+            </div>
+            <div class="button-row">
+              <button type="button" id="btn-reset-transform" class="btn">
+                Reset transform
+              </button>
+              <button type="button" id="btn-reset-view" class="btn">
+                Reset view
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </aside>
+    </main>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

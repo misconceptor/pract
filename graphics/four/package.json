@@ -1,0 +1,16 @@
+{
+  "name": "lab4-3d-text",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Lab 4 — 3D text with texture and live 4x4 matrix",
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run",
+    "serve": "python3 -m http.server 8000"
+  },
+  "devDependencies": {
+    "three": "^0.170.0",
+    "vitest": "^2.0.0"
+  }
+}
